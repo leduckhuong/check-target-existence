@@ -1,0 +1,33 @@
+{
+  "name": "check-target-existence",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node ./src/index.js",
+    "dev": "nodemon --inspect src/index.js",
+    "build": "webpack",
+    "build-watch": "webpack --watch",
+    "sass": "sass --style=compressed --no-source-map src/resources/scss:src/public/css",
+    "sass-watch": "sass --style=compressed --no-source-map --watch src/resources/scss:src/public/css",
+    "tailwindcss": "tailwindcss -i src/resources/tailwind/style.css -o src/public/css/style.css",
+    "tailwindcss-watch": "tailwindcss -i src/resources/tailwind/style.css -o src/public/css/style.css --watch"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.7.7",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^4.21.0",
+    "multer": "^1.4.5-lts.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.7",
+    "sass": "^1.79.3",
+    "tailwindcss": "^3.4.13",
+    "webpack": "^5.95.0"
+  }
+}

@@ -1,0 +1,31 @@
+<link rel="stylesheet" href="/css/form.css">
+<div class="h-screen backdrop-blur flex justify-center items-center">
+    <div>
+        <form action="/check-target-existence" enctype="multipart/form-data" method="post" class="min-w-[40rem] mx-auto bg-slate-800 text-white dark:bg-white dark:text-slate-600 py-16 px-4 rounded-md">
+            <h1 class="text-center text-5xl font-semibold">CHECK TARGET EXISTENCE</h1>
+                <div class="form__group">
+                    <label for="target">Target</label>
+                    <input type="text" id="target" name="target" class="form__controll" placeholder="http://test.com/">
+                    <div class="form__message"></div>
+                </div>
+                <div class="form__group">
+                    <label for="head">Head</label>
+                    <textarea class="text-slate-600" name="head" id="head" rows="10">User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0</textarea>
+                    <div class="form__message"></div>
+                </div>
+                <div class="form__group">
+                    <label for="file">Choose File Path</label>
+                    <input type="file" id="file" name="file" class="form__controll">
+                    <div class="form__message"></div>
+                </div>
+            <div class="form__group">
+                <input type="submit" class="form__controll bg-cyan-700" value="Check">
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        $('#target').val("");
+    });
+</script>
