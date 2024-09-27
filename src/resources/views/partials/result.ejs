@@ -1,0 +1,17 @@
+<div id="result">
+    <% result.forEach(item => { %>
+        <% if (item.status == '404') { %>
+            <div class="flex bg-red-400">
+                <p class="mr-4">URI: <%= item.uri %> </p>
+                <p class="mr-4">STATUS: <%= item.status %> </p>
+                <p>LENGTH: <%= item.byteLength %> </p>
+            </div>
+        <% } else { %>
+            <div class="flex bg-green-400">
+                <p class="mr-4">URI: <%= item.uri %> </p>
+                <p class="mr-4">STATUS: <%= item.status %> </p>
+                <p>LENGTH: <%= item.byteLength %> </p>
+            </div>
+        <% } %>
+    <% }) %>
+</div>
