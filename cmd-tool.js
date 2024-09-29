@@ -1,7 +1,6 @@
 const axios = require('axios');
 const fs = require('fs');
 const { parse } = require('json2csv'); // Thư viện json2csv
-const xlsx = require('xlsx'); // Thư viện xlsx
 const Excel = require('exceljs');
 
 // Hàm delay để làm chậm lại các luồng (giúp kiểm soát tốc độ)
