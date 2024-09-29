@@ -5,9 +5,9 @@ Usage: npm run cmd-tool -- --target <target> --path <pathFile>
 
 Options:
 
---target <target>           The target URL to scan.
+--target target           The target URL to scan.
 
---path <pathFile>        The file containing the paths to check, one per line.
+--path pathFile        The file containing the paths to check, one per line.
 
 --head [headerFile]      (Optional) The file containing custom headers to include in requests.
 
@@ -15,7 +15,7 @@ Options:
 
 --timeout [ms] (Optional) Time delay requests to send (default is 500).
 
---output <fileName> (Optional) To output a csv or xlsx result file
+--output fileName.csv <fileName> (Optional) To output a csv or xlsx result file
 
 Examples:
 
