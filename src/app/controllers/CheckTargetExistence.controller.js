@@ -91,7 +91,7 @@ class CheckTargetExistence {
             
             const fileContent = req.file.buffer.toString('utf8');
             const pathArr = fileContent.split(/\s+/);
-            const head = req.body.head;
+            const head = req.body.head
             const heads = head.split('\n');
             const headers = {};
 
