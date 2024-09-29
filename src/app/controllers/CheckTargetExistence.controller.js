@@ -4,10 +4,18 @@ const fs = require('fs');
 const { parse } = require('json2csv'); // Thư viện json2csv
 const Excel = require('exceljs');
 const wss = new WebSocket.Server({ port: 3333 });
-let stop = false;
 
 // Hàm delay để làm chậm lại các luồng (giúp kiểm soát tốc độ)
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+// WebSocket connection
+wss.on('connection', (ws) => {
+    console.log('Client connected');
+
+    ws.on('close', () => {
+        console.log('Client disconnected');
+    });
+});
 
 // Hàm để xử lý từng request
 const fetchUri = async (path, result) => {
@@ -81,6 +89,7 @@ const saveResults = async (results, outputFile) => {
 };
 
 class CheckTargetExistence {
+    stop = false;
     async scan(req, res) {
         try {
             
