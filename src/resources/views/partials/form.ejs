@@ -1,33 +1,40 @@
 <link rel="stylesheet" href="/css/form.css">
 <div class="h-screen backdrop-blur flex justify-center items-center">
     <div>
-        <form action="/check-target-existence" enctype="multipart/form-data" method="post" class="min-w-[40rem] mx-auto bg-slate-800 text-white dark:bg-white dark:text-slate-600 py-16 px-4 rounded-md">
+        <form id="scanForm" action="/check-target-existence" enctype="multipart/form-data" method="post" class="min-w-[40rem] mx-auto bg-slate-800 text-white dark:bg-white dark:text-slate-600 py-16 px-4 rounded-md">
             <h1 class="text-center text-5xl font-semibold">CHECK TARGET EXISTENCE</h1>
                 <div class="form__group">
                     <label for="target">Target</label>
                     <input type="text" id="target" name="target" class="form__controll" placeholder="http://test.com/">
-                    <div class="form__message"></div>
+                    <span class="form__message"></span>
                 </div>
                 <div class="form__group">
                     <label for="head">Head</label>
                     <textarea class="text-slate-600" name="head" id="head" rows="10">User-Agent: Mozilla/5.0</textarea>
-                    <div class="form__message"></div>
+                    <span class="form__message"></span>
                 </div>
                 <div class="form__group">
                     <label for="file">Choose File Path</label>
-                    <input type="file" id="file" name="file" class="form__controll">
-                    <div class="form__message"></div>
+                    <input type="file" id="file" name="file" class="form__controll" style="color: #fff;">
+                    <span class="form__message"></span>
                 </div>
             <div class="form__group">
-                <input type="submit" class="form__controll bg-cyan-700" value="Check">
-            </div>
-            <div class="form__group">
-                <button type="button" class="form__controll bg-cyan-700" id="stopScan">Stop Scan</button>
+                <button type="button" id="scanButton" class="bg-violet-500 font-bold tracking-widest rounded-xl hover:bg-violet-600 px-12 py-4 mt-12">
+                    SCAN
+                </button>
+                <button type="button" id="stopButton" class="bg-violet-500 font-bold tracking-widest rounded-xl hover:bg-violet-600 px-12 py-4 mt-12">
+                    STOP
+                </button>
+                <button type="button" id="exportResult" class="bg-violet-500 font-bold tracking-widest rounded-xl hover:bg-violet-600 px-12 py-4 mt-12">
+                    EXPORT RESULT
+                </button>
             </div>
         </form>
-        <div id="progress" class="flex"></div>
+        <div id="progress" class="flex text-2xl"></div>
     </div>
 </div>
+
+<div id="result"></div>
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -38,7 +45,7 @@
         socket.onmessage = function (event) {
             const result = JSON.parse(event.data); 
             const progress = document.getElementById('progress');
-            progress.innerHTML = `Processing <p class="ml-8" id="processing">${result.progress}</p> %`;
+            progress.innerHTML = `Processing <p class="ml-8" id="processing">${result.progress}</p> % of ${result.pathNumber}`;
         };
 
         socket.onopen = function () {
@@ -51,6 +58,87 @@
         const stopButton = $('#stopScan');
         stopButton.click(() => {
             fetch('/check-target-existence/stop')
-        })
+        });
+
+        let result = [];
+        // Xử lý nút SCAN
+        $('#scanButton').click(() => {
+            const form = document.getElementById('scanForm');
+            const formData = new FormData(form);
+            console.log(formData);
+            // Gửi form qua AJAX
+            fetch('/check-target-existence', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                result = data;
+                console.log('Scan started:', data);
+                html = data.map(item => {
+                    if (item.statusCode > 399) {
+                        return `<div class="flex bg-red-200 my-8 px-12 py-4 text-4xl">
+                                    <p class="mr-4">STATUS: ${item.status} </p>
+                                    <p class="mr-4 basis-1/2">URI: ${item.uri} </p>
+                                    <p class="mr-4">STATUS CODE: ${item.statusCode} </p>
+                                    <p>LENGTH: ${item.byteLength} </p>
+                                </div>`;
+                    } else {
+                        return `<div class="flex bg-green-200 my-8 px-12 py-4 text-4xl">
+                                    <p class="mr-4">STATUS: ${item.status} </p>
+                                    <p class="mr-4 basis-1/2">URI: ${item.uri} </p>
+                                    <p class="mr-4">STATUS CODE: ${item.statusCode} </p>
+                                    <p>LENGTH: ${item.byteLength} </p>
+                                </div>`;
+                    }
+                }).join(''); // Kết hợp tất cả các chuỗi thành một chuỗi duy nhất
+                $('#result').html(html);
+                // Bạn có thể thêm code để cập nhật giao diện sau khi scan bắt đầu
+            })
+            .catch(error => {
+                console.error('Error starting scan:', error);
+            });
+        });
+
+        // Xử lý nút STOP
+        $('#stopButton').click(() => {
+            fetch('/check-target-existence/stop')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Scan stopped:', data);
+                })
+                .catch(error => {
+                    console.error('Error stopping scan:', error);
+                });
+        });
+
+        // Xử lý nút export result
+        $('#exportResult').click(() => {
+            if(result.length>0) {
+                fetch('/check-target-existence/save-file', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json', // Đặt Content-Type là application/json
+                    },
+                    body: JSON.stringify(result), // Gửi dữ liệu kết quả đã được xử lý
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.blob(); // Chuyển đổi phản hồi thành blob
+                })
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob); // Tạo URL cho blob
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'results.xlsx'; // Tên tệp khi tải về
+                    document.body.appendChild(a);
+                    a.click(); // Nhấp vào link để tải về
+                    a.remove(); // Xóa link sau khi tải xong
+                })
+                .catch(error => {
+                    console.error('Error exporting results:', error);
+                });
+            }
+        });
     });
 </script>

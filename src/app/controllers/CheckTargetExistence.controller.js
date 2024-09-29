@@ -1,5 +1,8 @@
 const axios = require('axios');
 const WebSocket = require('ws');
+const fs = require('fs');
+const { parse } = require('json2csv'); // Thư viện json2csv
+const Excel = require('exceljs');
 const wss = new WebSocket.Server({ port: 3333 });
 let stop = false;
 
@@ -20,6 +23,61 @@ const fetchUri = async (path, result) => {
         result.push({ uri, status ,byteLength});
     }
     await delay(ms);
+};
+
+const saveResults = async (results, outputFile) => {
+    try {
+        const fileExtension = outputFile.split('.').pop().toLowerCase();
+
+        if (fileExtension === 'csv') {
+            const csv = parse(results); // Chuyển đổi sang CSV
+            await fs.promises.writeFile(outputFile, csv);
+            console.log(`Results saved to ${outputFile}`);
+        } else if (fileExtension === 'xlsx') {
+            const workbook = new Excel.Workbook();
+            const worksheet = workbook.addWorksheet('Results');
+
+            // Thêm các tiêu đề cột
+            worksheet.columns = [
+                { header: 'Status', key: 'status', width: 10 },
+                { header: 'URI', key: 'uri', width: 100 },
+                { header: 'Status code', key: 'statusCode', width: 20 },
+                { header: 'Byte Length', key: 'byteLength', width: 15 }
+            ];
+
+            // Thêm dữ liệu và áp dụng màu cho từng hàng
+            results.forEach((result) => {
+                const row = worksheet.addRow(result);
+
+                // Áp dụng màu dựa trên điều kiện (ví dụ: màu xanh cho status 200, màu đỏ cho status khác)
+                if (result.status === 'Success') {
+                    row.eachCell((cell) => {
+                        cell.fill = {
+                            type: 'pattern',
+                            pattern: 'solid',
+                            fgColor: { argb: 'FFB6D7A8' } // Màu xanh nhạt
+                        };
+                    });
+                } else {
+                    row.eachCell((cell) => {
+                        cell.fill = {
+                            type: 'pattern',
+                            pattern: 'solid',
+                            fgColor: { argb: 'FFF4CCCC' } // Màu đỏ nhạt
+                        };
+                    });
+                }
+            });
+
+            // Lưu workbook vào file
+            await workbook.xlsx.writeFile(outputFile);
+            console.log(`Results saved to ${outputFile}`);
+        } else {
+            console.error('Unsupported file format. Please use .csv or .xlsx');
+        }
+    } catch (error) {
+        console.error(`Failed to save results to ${outputFile}:`, error.message);
+    }
 };
 
 class CheckTargetExistence {
@@ -61,18 +119,21 @@ class CheckTargetExistence {
                     const encoder = new TextEncoder();
                     const byteArray = encoder.encode(data);
                     const byteLength = byteArray.length;
+                    const statusCode = response.status;
                     result.push({
+                        status: 'Success',
                         uri,
                         byteLength,
-                        status: response.status
+                        statusCode
                     });
                 } catch (error) {
                     const byteLength = error.response ? new TextEncoder().encode(error.response.data).length : 0;
-                    const status = error.response ? error.response.status : 500;
+                    const statusCode = error.response ? error.response.status : 500;
                     result.push({
+                        status: 'Failure',
                         uri,
                         byteLength,
-                        status
+                        statusCode
                     });
                 }
 
@@ -80,7 +141,7 @@ class CheckTargetExistence {
                 const progress = Math.round(((index + 1) / pathNumber) * 100);
                 wss.clients.forEach(client => {
                     if (client.readyState === WebSocket.OPEN) {
-                        client.send(JSON.stringify({ progress }));
+                        client.send(JSON.stringify({ progress , pathNumber}));
                     }
                 });
                 index++;
@@ -107,10 +168,11 @@ class CheckTargetExistence {
 
             await parallelRequests();
 
-            return res.render('index', {
-                isResult: true,
-                result
-            });
+            // return res.render('index', {
+            //     isResult: true,
+            //     result
+            // });
+            return res.json(result);
         } catch (error) {
             console.log(error);
             res.send('Error');
@@ -121,7 +183,29 @@ class CheckTargetExistence {
 
     stopScan(req, res, next) {
         stop = true; // Dừng quá trình scan
-        res.send('Scanning stopped');
+        res.json({status: 'Done'})
+    }
+
+    async saveFile(req, res, next) {
+        const results = req.body; // Nhận dữ liệu từ client
+        const outputFile = 'results.xlsx'; // Tên file xuất ra
+
+        try {
+            await saveResults(results, outputFile); // Gọi hàm lưu kết quả
+            res.download(outputFile, (err) => {
+                if (err) {
+                    console.error('Error downloading file:', err);
+                    res.status(500).send('Error downloading file');
+                }
+                // Sau khi tải xong, xóa tệp tin (nếu cần)
+                fs.unlink(outputFile, (err) => {
+                    if (err) console.error('Error deleting file:', err);
+                });
+            });
+        } catch (error) {
+            console.error('Failed to export results:', error);
+            res.status(500).send('Failed to export results');
+        }
     }
 }
 
