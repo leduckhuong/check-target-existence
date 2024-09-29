@@ -21,40 +21,36 @@
             <div class="form__group">
                 <input type="submit" class="form__controll bg-cyan-700" value="Check">
             </div>
+            <div class="form__group">
+                <button type="button" class="form__controll bg-cyan-700" id="stopScan">Stop Scan</button>
+            </div>
         </form>
+        <div id="progress" class="flex"></div>
     </div>
 </div>
-<h1>WebSocket Progress Monitor</h1>
-<ul id="progressList"></ul> <!-- Nơi hiển thị tiến trình -->
 
-<script>
-    // Tạo kết nối WebSocket đến server
-    const socket = new WebSocket('ws://localhost:8888');
-
-    // Khi nhận được dữ liệu từ WebSocket
-    socket.onmessage = function (event) {
-        console.log(1);
-        const result = JSON.parse(event.data);  // Parse JSON data nhận từ server
-        const progressList = document.getElementById('progressList');
-        const listItem = document.createElement('li');
-
-        // Hiển thị kết quả nhận được
-        listItem.textContent = `URL: ${result.uri}, Status: ${result.status}, Byte Length: ${result.byteLength}`;
-        progressList.appendChild(listItem);  // Thêm vào danh sách hiển thị
-    };
-
-    // Khi WebSocket kết nối thành công
-    socket.onopen = function () {
-        console.log('WebSocket connection established');
-    };
-
-    // Khi WebSocket đóng kết nối
-    socket.onclose = function () {
-        console.log('WebSocket connection closed');
-    };
-</script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         $('#target').val("");
+        
+        const socket = new WebSocket('ws://127.0.0.1:3333');
+
+        socket.onmessage = function (event) {
+            const result = JSON.parse(event.data); 
+            const progress = document.getElementById('progress');
+            progress.innerHTML = `Processing <p class="ml-8" id="processing">${result.progress}</p> %`;
+        };
+
+        socket.onopen = function () {
+            console.log('WebSocket connection established');
+        };
+        socket.onclose = function (event) {
+            console.log(`WebSocket connection closed: code=${event.code}, reason=${event.reason}`);
+        };
+
+        const stopButton = $('#stopScan');
+        stopButton.click(() => {
+            fetch('/check-target-existence/stop')
+        })
     });
 </script>

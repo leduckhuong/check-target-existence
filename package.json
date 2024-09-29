@@ -12,7 +12,8 @@
     "sass": "sass --style=compressed --no-source-map src/resources/scss:src/public/css",
     "sass-watch": "sass --style=compressed --no-source-map --watch src/resources/scss:src/public/css",
     "tailwindcss": "tailwindcss -i src/resources/tailwind/style.css -o src/public/css/style.css",
-    "tailwindcss-watch": "tailwindcss -i src/resources/tailwind/style.css -o src/public/css/style.css --watch"
+    "tailwindcss-watch": "tailwindcss -i src/resources/tailwind/style.css -o src/public/css/style.css --watch",
+    "cmd-tool": "node cmd-tool.js"
   },
   "keywords": [],
   "author": "",

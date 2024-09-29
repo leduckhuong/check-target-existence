@@ -5,6 +5,7 @@ const router = express.Router();
 const upload = require('../../app/middlewares/upload');
 const checkTargetExistenceController = require('../../app/controllers/CheckTargetExistence.controller');
 
-router.post('/', upload.single('file'), checkTargetExistenceController.home);
+router.post('/', upload.single('file'), checkTargetExistenceController.scan);
+router.get('/stop', checkTargetExistenceController.stopScan);
 
 module.exports = router;
