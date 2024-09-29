@@ -40,7 +40,7 @@
     document.addEventListener('DOMContentLoaded', () => {
         $('#target').val("");
         
-        const socket = new WebSocket('ws://check-target-existence.onrender.com:3333');
+        const socket = new WebSocket('wss://check-target-existence.onrender.com:3333');
 
         socket.onmessage = function (event) {
             const result = JSON.parse(event.data); 
