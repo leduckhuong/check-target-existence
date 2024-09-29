@@ -15,9 +15,10 @@ Options:
 
 --timeout [ms] (Optional) Time delay requests to send (default is 500).
 
+--output <fileName> (Optional) To output a csv or xlsx result file
 
 Examples:
 
 npm run cmd-tool -- --target http://example.com --path paths.txt
 
-npm run cmd-tool -- --target http://example.com --path paths.txt --head head.txt --concurrency 10 --timeout 500
+npm run cmd-tool -- --target http://example.com --path paths.txt --head head.txt --concurrency 10 --timeout 500 --output result.csv
