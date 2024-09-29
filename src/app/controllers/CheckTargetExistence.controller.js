@@ -6,9 +6,26 @@ let stop = false;
 // Hàm delay để làm chậm lại các luồng (giúp kiểm soát tốc độ)
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
+// Hàm để xử lý từng request
+const fetchUri = async (path, result) => {
+    const uri = target.trim() + '/' + path.trim();
+    try {
+        const response = await axios.get(uri, { headers });
+        const data = response.data;
+        const byteLength = Buffer.byteLength(data); // Sử dụng Buffer để tính độ dài
+        result.push({ uri, status: response.status ,byteLength});
+    } catch (error) {
+        const byteLength = error.response ? Buffer.byteLength(error.response.data) : 0;
+        const status = error.response ? error.response.status : 500;
+        result.push({ uri, status ,byteLength});
+    }
+    await delay(ms);
+};
+
 class CheckTargetExistence {
     async scan(req, res) {
         try {
+            
             const target = req.body.target;
             if (!req.file) {
                 return res.status(400).send('No file uploaded.');
@@ -19,6 +36,8 @@ class CheckTargetExistence {
             const head = req.body.head;
             const heads = head.split('\n');
             const headers = {};
+
+            
             for (let i = 0; i < heads.length; i++) {
                 const item = heads[i].split(':');
                 for (let j = 0; j < item.length; j++) {

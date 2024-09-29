@@ -8,20 +8,29 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 // Hàm để hiển thị hướng dẫn sử dụng
 const showHelp = () => {
-    console.log(`
-Usage: npm run cmd-tool -- --target <target> --path <pathFile>
+    console.log(`source: https://github.com/leduckhuong/check-target-existence
+
+Usage: npm run cmd-tool -- --target --path
 
 Options:
---target <target>           The target URL to scan.
---path <pathFile>        The file containing the paths to check, one per line.
---head [headerFile]      (Optional) The file containing custom headers to include in requests.
+
+--target target The target URL to scan.
+
+--path pathFile The file containing the paths to check, one per line.
+
+--head [headerFile] (Optional) The file containing custom headers to include in requests.
+
 --concurrency [concurrencyLimit] (Optional) The number of concurrent requests to send (default is 10).
+
 --timeout [ms] (Optional) Time delay requests to send (default is 500).
 
+--output fileName.csv (Optional) To output a csv or xlsx result file
+
 Examples:
+
 npm run cmd-tool -- --target http://example.com --path paths.txt
-npm run cmd-tool -- --target http://example.com --path paths.txt --head head.txt --concurrency 10 --timeout 500
-`);
+
+npm run cmd-tool -- --target http://example.com --path paths.txt --head head.txt --concurrency 10 --timeout 500 --output result.csv`);
     process.exit(0); // Kết thúc chương trình
 };
 
