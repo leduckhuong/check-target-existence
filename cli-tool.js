@@ -10,7 +10,7 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 const showHelp = () => {
     console.log(`source: https://github.com/leduckhuong/check-target-existence
 
-Usage: npm run cmd-tool -- --target --path
+Usage: npm run cli-tool -- --target --path
 
 Options:
 
@@ -26,13 +26,18 @@ Options:
 
 --output fileName.csv (Optional) To output a csv or xlsx result file
 
+--proxy '{"host": "127.0.0.1", "port": "8080", "protocol": "http"}' (Optional) proxy Server
+
+--match-code 200,201,... (Optional) Match HTTP status codes, or "all" for everything. (default all codes)
+
 Examples:
 
-npm run cmd-tool -- --target http://example.com --path paths.txt
+npm run cli-tool -- --target http://example.com --path paths.txt
 
-npm run cmd-tool -- --target http://example.com --path paths.txt --head head.txt --concurrency 10 --timeout 500 --output result.csv`);
+npm run cli-tool -- --target http://example.com --path paths.txt --head head.txt --concurrency 10 --timeout 500 --output result.csv`);
     process.exit(0); // Kết thúc chương trình
 };
+
 
 // Đọc headers file 
 const readHeaders = async (headerFile) => {
@@ -65,30 +70,39 @@ const readHeaders = async (headerFile) => {
     }
 };
 
+const isStatusCodeMatched = (statusCode, matchCodes) => {
+    if (matchCodes.includes('all')) return true; // Nếu match "all" thì không cần kiểm tra
+    return matchCodes.includes(statusCode.toString()); // Kiểm tra xem mã trạng thái có nằm trong danh sách không
+};
+
 // Hàm để xử lý từng request
-const fetchUri = async (target, path, headers, ms, result) => {
+const fetchUri = async (target, path, headers, proxy, ms, matchCodes, result) => {
     const uri = target.trim() + '/' + path.trim();
     try {
-        const response = await axios.get(uri, { headers });
+        const response = await axios.get(uri, { headers, proxy });
         const data = response.data;
         const byteLength = Buffer.byteLength(data); // Sử dụng Buffer để tính độ dài
         const statusCode = response.status;
-        console.log({ status: 'Success', uri, statusCode ,byteLength});
-        result.push({ status: 'Success', uri, statusCode ,byteLength});
+        if (isStatusCodeMatched(statusCode, matchCodes)) {
+            console.log({ status: 'Success', uri, statusCode, byteLength });
+            result.push({ status: 'Success', uri, statusCode, byteLength });
+        }
     } catch (error) {
         const byteLength = error.response ? Buffer.byteLength(error.response.data) : 0;
         const statusCode = error.response ? error.response.status : 500;
-        console.log({ status: 'Failure', uri, statusCode ,byteLength});
-        result.push({ status: 'Failure', uri, statusCode ,byteLength});
+        if (isStatusCodeMatched(statusCode, matchCodes)) {
+            console.log({ status: 'Failure', uri, statusCode, byteLength });
+            result.push({ status: 'Failure', uri, statusCode, byteLength });
+        }
     }
     await delay(ms);
 };
 
 // Điều khiển số lượng yêu cầu đồng thời
-const parallelRequests = async (target, pathArr, headers, ms, limit, result) => {
+const parallelRequests = async (target, pathArr, headers, proxy, ms, limit, matchCodes, result) => {
     const queue = [];
     for (let i = 0; i < pathArr.length; i++) {
-        queue.push(fetchUri(target, pathArr[i], headers, ms, result));
+        queue.push(fetchUri(target, pathArr[i], headers, proxy, ms, matchCodes, result));
         if (queue.length >= limit) {
             await Promise.all(queue);
             queue.length = 0;
@@ -157,7 +171,7 @@ const saveResults = async (results, outputFile) => {
 
 
 class CheckTargetExistence {
-    async scan(target, pathFile, headerFile, concurrencyLimit, ms, outputFile) {
+    async scan(target, pathFile, headerFile, proxy, concurrencyLimit, ms, matchCodes, outputFile) {
         try {
             // Đọc đường dẫn từ file đã cung cấp
             const fileContent = fs.readFileSync(pathFile, 'utf8');
@@ -167,7 +181,7 @@ class CheckTargetExistence {
             const result = [];
             const limit = parseInt(concurrencyLimit) || 10; // số lượng luồng mặc định là 10
 
-            await parallelRequests(target, pathArr, headers, ms, limit, result);
+            await parallelRequests(target, pathArr, headers, proxy, ms, limit, matchCodes, result);
 
             if (outputFile) {
                 await saveResults(result, outputFile);
@@ -196,6 +210,8 @@ async function main () {
         const concurrencyArgIndex = args.indexOf('--concurrency');
         const timeoutIndex = args.indexOf('--timeout');
         const outputArgIndex = args.indexOf('--output');
+        const proxyArgIndex = args.indexOf('--proxy');
+        const matchCodeArgIndex = args.indexOf('--match-code');
 
         const target = targetArgIndex !== -1 ? args[targetArgIndex + 1] : null;
         const pathFile = pathArgIndex !== -1 ? args[pathArgIndex + 1] : null;
@@ -203,9 +219,11 @@ async function main () {
         const concurrencyLimit = concurrencyArgIndex !== -1 ? parseInt(args[concurrencyArgIndex + 1]) : 10;
         const ms = timeoutIndex !== -1 ? parseInt(args[timeoutIndex + 1]) : 500;
         const outputFile = outputArgIndex !== -1 ? args[outputArgIndex + 1] : null;
+        const proxy = proxyArgIndex !== -1 ? JSON.parse(args[proxyArgIndex + 1]) : null;
+        const matchCodes = matchCodeArgIndex !== -1 ? args[matchCodeArgIndex + 1].split(',') : ['all']; // Mặc định là 'all'
 
         const checker = new CheckTargetExistence();
-        await checker.scan(target, pathFile, headerFile, concurrencyLimit, ms, outputFile);
+        await checker.scan(target, pathFile, headerFile, proxy, concurrencyLimit, ms, matchCodes, outputFile);
     }
 }
 

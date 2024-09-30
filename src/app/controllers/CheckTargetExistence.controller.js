@@ -17,22 +17,6 @@ wss.on('connection', (ws) => {
     });
 });
 
-// Hàm để xử lý từng request
-const fetchUri = async (path, result) => {
-    const uri = target.trim() + '/' + path.trim();
-    try {
-        const response = await axios.get(uri, { headers });
-        const data = response.data;
-        const byteLength = Buffer.byteLength(data); // Sử dụng Buffer để tính độ dài
-        result.push({ uri, status: response.status ,byteLength});
-    } catch (error) {
-        const byteLength = error.response ? Buffer.byteLength(error.response.data) : 0;
-        const status = error.response ? error.response.status : 500;
-        result.push({ uri, status ,byteLength});
-    }
-    await delay(ms);
-};
-
 const saveResults = async (results, outputFile) => {
     try {
         const fileExtension = outputFile.split('.').pop().toLowerCase();
@@ -89,7 +73,12 @@ const saveResults = async (results, outputFile) => {
 };
 
 class CheckTargetExistence {
-    stop = false;
+    constructor() {
+        this.stop = false; 
+        this.scan = this.scan.bind(this);
+        this.stopScan = this.stopScan.bind(this);
+        this.saveFile = this.saveFile.bind(this);
+    }
     async scan(req, res) {
         try {
             
@@ -120,7 +109,7 @@ class CheckTargetExistence {
 
             // Hàm để xử lý từng request
             const fetchUri = async (path) => {
-                if (stop) return;
+                if (this.stop) return;
                 const uri = target.trim() + '/' + path.trim();
                 try {
                     const response = await axios.get(uri, { headers });
@@ -161,7 +150,7 @@ class CheckTargetExistence {
             const parallelRequests = async () => {
                 const queue = [];
                 for (let i = 0; i < pathNumber; i++) {
-                    if (stop) break;
+                    if (this.stop) break;
 
                     queue.push(fetchUri(pathArr[i]));
                     
@@ -186,12 +175,12 @@ class CheckTargetExistence {
             console.log(error);
             res.send('Error');
         } finally {
-            stop = false;
+            this.stop = false;
         }
     }
 
     stopScan(req, res, next) {
-        stop = true; // Dừng quá trình scan
+        this.stop = true; // Dừng quá trình scan
         res.json({status: 'Done'})
     }
 
